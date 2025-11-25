@@ -103,4 +103,4 @@ do
 end
 
 notify("Game Unsupported, Loading Universal script.")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/LzHubScripts/scripts/refs/heads/main/Universal.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/YallSumLs/LzHubScript/refs/heads/main/Universal.Luau"))()
