@@ -97,7 +97,7 @@ do
     local placeId = 16732694052
     if game.PlaceId == placeId then
         notify("Loading Script! (Fisch)")
-        loadstring(game:HttpGet(""))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/YallSumLs/LzHubScript/refs/heads/main/Fisch.luau"))()
         return
     end
 end
