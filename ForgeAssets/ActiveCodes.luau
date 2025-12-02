@@ -1,4 +1,4 @@
-local Codes = {
+return {
     "SORRYFORSHUTDOWN",
     "300K!",
     "100KLIKES",
