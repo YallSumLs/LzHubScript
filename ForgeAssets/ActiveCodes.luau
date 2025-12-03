@@ -12,4 +12,5 @@ return {
     "BETARELEASE!",
     "POSTRELEASEQNA",
     "RELEASE",
+    "PEAK!",
 }
