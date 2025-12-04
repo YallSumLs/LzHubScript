@@ -13,4 +13,5 @@ return {
     "POSTRELEASEQNA",
     "RELEASE",
     "PEAK!",
+    "400K!",
 }
