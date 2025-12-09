@@ -14,4 +14,5 @@ return {
     "RELEASE",
     "PEAK!",
     "400K!",
+    "FREESPINS",
 }
