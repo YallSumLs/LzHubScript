@@ -15,4 +15,5 @@ return {
     "PEAK!",
     "400K!",
     "FREESPINS",
+    "FORG!",
 }
