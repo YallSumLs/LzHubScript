@@ -5051,204 +5051,185 @@ local FONT_MED  = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.Fo
 local FONT_REG  = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular)
 local FONT_BOLD = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold)
 
-function Window:Notify(o)
-    o = type(o) == "table" and o or {}
-
-    local title = tostring(o.Title or o.Name or "Notification")
-    local text  = tostring(o.Content or o.Text or "")
-    local dur   = math.max(tonumber(o.Duration or o.Time) or 5, 1)
-    local sty   = tostring(o.Type or o.Style or "Info"):lower()
-
-    local th = AirFlow.Theme
-    local accent = (sty == "success" and th.Success)
-        or (sty == "warning" and th.Warning)
-        or (sty == "error" and th.Error)
-        or th.Accent
-
-    local holder = self.NotifyHolder
-    if not holder or not holder.Parent then return end
-
-    local toasts = self._toasts or {}
-    self._toasts = toasts
-
-    while #toasts >= (self.MaxNotifications or 4) do
-        table.remove(toasts, 1):Destroy()
-    end
-
-    local function make(class, props)
-        local inst = Instance.new(class)
-        for k2, v2 in pairs(props) do
-            if k2 ~= "Parent" then
-                inst[k2] = v2
-            end
-        end
-        if props.Parent then
-            inst.Parent = props.Parent
-        end
-        return inst
-    end
-
-    local function tw(inst, props, tme, style)
-        if tme <= 0 then
-            for k2, v2 in pairs(props) do
-                inst[k2] = v2
-            end
-            return
-        end
-        TweenService:Create(inst, TweenInfo.new(tme, style or Enum.EasingStyle.Quart, Enum.EasingDirection.Out), props):Play()
-    end
-
-    local pad, hasTitle = 12, title ~= ""
-
-    local frame = make("Frame", {
-        Size             = UDim2.new(1, 0, 0, 0),
-        BackgroundColor3 = th.Surface,
-        BorderSizePixel  = 0,
-        ClipsDescendants = true,
-        LayoutOrder      = (self._notifyOrder or 0) + 1,
-    })
-    self._notifyOrder = frame.LayoutOrder
-
-    make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = frame })
-    make("UIStroke", {
-        Color           = th.Stroke,
-        Thickness       = 1,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Parent          = frame,
-    })
-    make("Frame", {
-        Size             = UDim2.new(0, 3, 1, 0),
-        BackgroundColor3 = accent,
-        BorderSizePixel  = 0,
-        Parent           = frame,
+function Window:Notify(opts)
+    opts = merge(opts, {
+        Text = "Content",
+        Message = "Content",
+        Image = "Icon",
     })
 
-    local left = pad
-    if o.Icon then
-        local ic = make("ImageLabel", {
-            Position               = UDim2.fromOffset(pad, 10),
-            Size                   = UDim2.fromOffset(16, 16),
-            BackgroundTransparency = 1,
-            ImageColor3            = accent,
-            ScaleType              = Enum.ScaleType.Fit,
-            Parent                 = frame,
-        })
-        pcall(function()
-            applyIcon(ic, o.Icon)
-        end)
-        left = pad + 24
-    end
+    local duration = opts.Duration or 4
+    local accent = typeColors[opts.Type] or Theme.Text
 
-    if hasTitle then
-        make("TextLabel", {
-            Position               = UDim2.fromOffset(left, 10),
-            Size                   = UDim2.new(1, -(left + 34), 0, 18),
-            BackgroundTransparency = 1,
-            TextColor3             = th.Text,
-            TextSize               = 14,
-            FontFace               = FONT_MED,
-            TextXAlignment         = Enum.TextXAlignment.Left,
-            Text                   = title,
-            TextTruncate           = Enum.TextTruncate.AtEnd,
-            Parent                 = frame,
-        })
-    end
+    self._notifyOrder += 1
 
-    local body
-    if text ~= "" then
-        body = make("TextLabel", {
-            Position               = UDim2.fromOffset(pad, hasTitle and 30 or 10),
-            Size                   = UDim2.new(1, -(pad * 2), 0, 0),
-            AutomaticSize          = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            TextColor3             = th.Muted,
-            TextSize               = 13,
-            FontFace               = FONT_REG,
-            TextXAlignment         = Enum.TextXAlignment.Left,
-            TextYAlignment         = Enum.TextYAlignment.Top,
-            Text                   = text,
-            TextWrapped            = true,
-            TextTruncate           = Enum.TextTruncate.None,
-            Parent                 = frame,
-        })
-    end
-
-    local bar = make("Frame", {
-        AnchorPoint      = Vector2.new(0, 1),
-        Position         = UDim2.new(0, 0, 1, 0),
-        Size             = UDim2.new(1, 0, 0, 2),
-        BackgroundColor3 = th.Surface3,
-        BorderSizePixel  = 0,
-        Parent           = frame,
+    local outer = create("Frame", {
+        Size                   = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+        LayoutOrder            = self._notifyOrder,
+        Parent                 = self.NotifyHolder,
     })
 
-    local fill = make("Frame", {
-        Size             = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = accent,
-        BorderSizePixel  = 0,
-        Parent           = bar,
+    local slide = create("Frame", {
+        Position               = UDim2.fromOffset(320, 0),
+        Size                   = UDim2.new(1, 0, 0, 0),
+        AutomaticSize          = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        Parent                 = outer,
     })
 
-    local close = make("TextButton", {
+    local shadow = create("ImageLabel", {
+        Position               = UDim2.fromOffset(-20, -20),
+        Size                   = UDim2.new(1, 40, 1, 40),
+        BackgroundTransparency = 1,
+        Image                  = Assets.Shadow,
+        ImageColor3            = Color3.new(0, 0, 0),
+        ImageTransparency      = 1,
+        ScaleType              = Enum.ScaleType.Slice,
+        SliceCenter            = Rect.new(49, 49, 450, 450),
+        ZIndex                 = 0,
+        Parent                 = slide,
+    })
+
+    local card = create("CanvasGroup", {
+        Size                   = UDim2.new(1, 0, 0, 0),
+        AutomaticSize          = Enum.AutomaticSize.Y,
+        BackgroundColor3       = Theme.Background,
+        BorderSizePixel        = 0,
+        GroupTransparency      = 1,
+        Parent                 = slide,
+    })
+    corner(card, UDim.new(0, 10))
+    local cardStroke = stroke(card, Theme.Stroke)
+    dividerLine(card)
+    glow(card, UDim2.fromOffset(260, 120), UDim2.new(1, -10, 0, -10), 0.86, 90)
+
+    local content = create("Frame", {
+        Size                   = UDim2.new(1, 0, 0, 0),
+        AutomaticSize          = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        Parent                 = card,
+    })
+    padding(content, 16, 16, 14, 24)
+
+    local leftPad = 0
+    if opts.Icon then
+        iconButton(content, opts.Icon, accent == Theme.Text and Theme.Accent or accent, UDim2.new(0, 0, 0, 8))
+        leftPad = 24
+    end
+
+    textLabel({
+        Position   = UDim2.fromOffset(leftPad, 0),
+        Size       = UDim2.new(1, -28 - leftPad, 0, 16),
+        Text       = opts.Title or "Notification",
+        TextSize   = 14,
+        TextColor3 = accent,
+        Parent     = content,
+    })
+
+    local closeBtn = create("TextButton", {
         AnchorPoint            = Vector2.new(1, 0),
-        Position               = UDim2.new(1, -6, 0, 5),
-        Size                   = UDim2.fromOffset(20, 20),
+        Position               = UDim2.new(1, 6, 0, -5),
+        Size                   = UDim2.fromOffset(24, 24),
         BackgroundTransparency = 1,
         Text                   = "×",
-        TextSize               = 16,
-        FontFace               = FONT_BOLD,
-        TextColor3             = th.Muted,
-        Parent                 = frame,
+        TextColor3             = Theme.Muted,
+        TextSize               = 22,
+        FontFace               = Fonts.Bold,
+        AutoButtonColor        = false,
+        Parent                 = content,
     })
+    closeBtn.MouseEnter:Connect(function()
+        tween(closeBtn, { TextColor3 = Theme.Text }, 0.15)
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        tween(closeBtn, { TextColor3 = Theme.Muted }, 0.2)
+    end)
 
-    local function height()
-        local hgt = hasTitle and 30 or 10
-        if body then
-            hgt += body.TextBounds.Y + 8
-        end
-        return math.max(hgt + 8, 40)
+    if opts.Content then
+        textLabel({
+            Position           = UDim2.fromOffset(leftPad, 21),
+            Size               = UDim2.new(1, -leftPad, 0, 0),
+            AutomaticSize      = Enum.AutomaticSize.Y,
+            Text               = opts.Content,
+            TextSize           = 13,
+            FontFace           = Fonts.Regular,
+            TextColor3         = Theme.Muted,
+            TextWrapped        = true,
+            TextTruncate       = Enum.TextTruncate.None,
+            TextYAlignment     = Enum.TextYAlignment.Top,
+            Parent             = content,
+        })
     end
 
-    local dismissed = false
+    local barBg = create("Frame", {
+        AnchorPoint      = Vector2.new(0, 1),
+        Position         = UDim2.new(0, 16, 1, -8),
+        Size             = UDim2.new(1, -32, 0, 3),
+        BackgroundColor3 = Theme.Surface3,
+        BorderSizePixel  = 0,
+        Parent           = card,
+    })
+    corner(barBg, UDim.new(1, 0))
 
+    local barFill = create("Frame", {
+        Size             = UDim2.fromScale(1, 1),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel  = 0,
+        Parent           = barBg,
+    })
+    corner(barFill, UDim.new(1, 0))
+
+    task.defer(function()
+        if outer.Parent then
+            tween(outer, {
+                Size = UDim2.new(1, 0, 0, card.AbsoluteSize.Y),
+            }, 0.3, Enum.EasingStyle.Quint)
+        end
+    end)
+
+    tween(slide, { Position = UDim2.fromOffset(0, 0) }, 0.5, Enum.EasingStyle.Back)
+    tween(card, { GroupTransparency = 0 }, 0.3)
+    tween(shadow, { ImageTransparency = 0.6 }, 0.4)
+    tween(barFill, { Size = UDim2.fromScale(0, 1) }, duration, Enum.EasingStyle.Linear)
+
+    local dismissed = false
     local function dismiss()
         if dismissed then return end
         dismissed = true
 
-        local idx = table.find(toasts, frame)
-        if idx then
-            table.remove(toasts, idx)
-        end
-
-        tw(frame, { Size = UDim2.new(1, 0, 0, 0) }, 0.25, Enum.EasingStyle.Quint)
-        task.delay(0.27, function()
-            frame:Destroy()
-        end)
-    end
-
-    close.MouseButton1Click:Connect(dismiss)
-
-    table.insert(toasts, frame)
-    frame.Parent = holder
-
-    local function apply()
-        if not dismissed then
-            tw(frame, { Size = UDim2.new(1, 0, 0, height()) }, 0.3, Enum.EasingStyle.Quint)
-        end
-    end
-
-    if body then
-        body:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            if not dismissed then
-                tw(frame, { Size = UDim2.new(1, 0, 0, height()) }, 0.2)
+        for i, fn in ipairs(self._toasts) do
+            if fn == dismiss then
+                table.remove(self._toasts, i)
+                break
             end
+        end
+
+        tween(slide, { Position = UDim2.fromOffset(320, 0) }, 0.3, Enum.EasingStyle.Quint)
+        tween(card, { GroupTransparency = 1 }, 0.2)
+        tween(cardStroke, { Transparency = 1 }, 0.15)
+        tween(shadow, { ImageTransparency = 1 }, 0.2)
+
+        task.delay(0.22, function()
+            outer.ClipsDescendants = true
+            tween(outer, { Size = UDim2.new(1, 0, 0, -4) }, 0.22, Enum.EasingStyle.Quint)
+            task.delay(0.24, function()
+                outer:Destroy()
+            end)
         end)
     end
 
-    task.defer(apply)
+    task.delay(duration, dismiss)
+    closeBtn.MouseButton1Click:Connect(dismiss)
 
-    tw(fill, { Size = UDim2.new(0, 0, 1, 0) }, dur, Enum.EasingStyle.Linear)
-    task.delay(dur + 0.05, dismiss)
+    table.insert(self._toasts, dismiss)
+
+    while #self._toasts > self.MaxNotifications do
+        local oldest = table.remove(self._toasts, 1)
+        oldest()
+    end
+
+    return { Dismiss = dismiss }
 end
 
 function Window:_listen(kind, fn, control)
